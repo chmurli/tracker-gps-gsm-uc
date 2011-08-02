@@ -10,6 +10,7 @@
 #include <avr/pgmspace.h>
 #include <inttypes.h>
 #include <util/delay.h>
+#include <math.h>
 #include "makra.h"
 #include "config.h"
 #include "gps.h"
@@ -41,6 +42,87 @@ inline uint8_t gpsDataRdy(void) {
 inline void gpsClearDataRdy(void) {
 	gpsFlags.rdyGGA=gpsFlags.rdyRMC=gpsFlags.rdyGSA=0;
 }
+
+
+
+/* bardzo uproszczone przekształcenie stringa na liczbę float
+ * tylko liczby dodatnie (bez znaków '+' lub '-')
+ * brak obsługi zapisu naukowego
+ */
+float myAtof(char s[]) {
+	float val, power;
+    int i;
+  
+	// zamiana strina na float
+    for(i=0; isspace(s[i]); i++) ; 		/* skip leading space */
+    for(val = 0.0; isdigit(s[i]); i++)  /* convert integer portion */
+        val = val * 10.0 + (s[i] - '0');
+    if(s[i] == '.') i++;				/* convert fraction portion */
+    for(power = 1.0; isdigit(s[i]); i++, power *= 10.0)
+        val = 10.0 * val + (s[i] - '0');
+
+    return val / power;
+}
+
+
+
+
+/* tablica pomocnicza do zapisu stringa z przekonwertowaną prędkościna na km/h lub m/s
+ */
+uint8_t speed_tmp[6];
+
+
+
+uint8_t* floatToString(float num) {
+	uint8_t *fstr=speed_tmp;		// wskaźnik do tablicy, który będziemy przesuwać
+	int8_t m = log10f(num);			// musi być ze znakiem!!!
+	uint8_t digit;
+	float weight;
+	float tolerance = 0.01f;
+
+	if(!(num > 0.0f + tolerance)) 	// jeżeli jest mniejsze niż tolerancja to zapisujemy "0.0"
+	{
+		*(fstr++) = '0';
+		*(fstr++) = '.';
+		*(fstr++) = '0';
+	} else {
+		
+		while(num > 0.0f + tolerance)
+		{
+		    weight = powf(10.0f, (float)m);
+		    digit = floorf(num / weight);
+		    num -= (digit*weight);
+		    *(fstr++) = '0' + digit;
+		    if (m == 0)
+		        *(fstr++) = '.';
+		    --m;
+		}	
+	}
+	
+	*(fstr) = '\0';		// znak NULL
+	return speed_tmp;
+}
+
+
+
+float gpsSpeedInKnotsPH() {
+	return myAtof(gps.speed);
+}
+
+
+
+float gpsSpeedInKmPH() {
+	return myAtof(gps.speed) * 1.852;
+}
+
+
+float gpsSpeedInMPS() {
+	return myAtof(gps.speed) * (1852/3600);
+}
+
+
+
+
 
 
 

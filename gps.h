@@ -18,16 +18,20 @@
 							* GGA
 							* RMC
 							* GSA
-						* sprawdzana suma kontrolna 
+						* sprawdza sumę kontrolną
+						* przelicza prędkość z węzły/h na km/h lub m/s
+							* zwraca wynik jako liczbę float lub string  
 						 
  
 -----------------------------------------------------------------------------
  
- Changelog		:	1.0 - stable version
+ Changelog		:	* 1.0 - stable version
+					* 1.1 - dodano przeliczniki prędkości na km/h i m/s	
+
  
 -----------------------------------------------------------------------------
  
- ToDo			:	* nothing
+ ToDo			:	* funkcje reset
 					
  
 ****************************************************************************/
@@ -74,6 +78,29 @@ extern inline uint8_t gpsDataRdy(void);
 /* gdy pobierzemy dane z struktury GPS i wyślemy np. przez GSM musimy wyzerować gotowość do nadania danych
  */
 extern inline void gpsClearDataRdy(void);
+
+
+
+/* zwraca prędkość w węzły/h jako liczbę float
+ */
+float gpsSpeedInKnotsPH();
+
+
+/* zwraca prędkość w km/h jako liczbę float
+ */
+float gpsSpeedInKmPH();
+
+
+/* zwraca prędkość w metry/s jako liczbę float
+ */
+float gpsSpeedInMPS();
+
+
+/* zamiana float na string
+ * powoduje przekłamanie liczby o wartość tolerancji (+/- telerancja)
+ * używane z funkcjami gpsSpeedInKnotsPH, gpsSpeedInKmPH i gpsSpeedInMPS
+ */
+uint8_t* floatToString(float num);
 
 
 

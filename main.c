@@ -109,9 +109,8 @@ int main(void)
 		// domyślnie powinny być gotowe co sekundę jeżeli nie było błędów w transmisji
 		if(gpsDataRdy()) {
 			gpsDisable();
-			
-			
-	
+
+
 			// gdy pozycja z GPS została ustalona poprawnie
 			if(gps.status[0]=='A') {
 				
@@ -166,7 +165,8 @@ int main(void)
 				// wyślij wiadomość o błędnej pozycji
 				gsmGprsSendData(INSTRUCTION_NOFIX);
 			}
-	
+			
+			
 			
 			
 			
