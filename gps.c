@@ -10,10 +10,13 @@
 #include <avr/pgmspace.h>
 #include <inttypes.h>
 #include <util/delay.h>
-#include <math.h>
 #include "makra.h"
 #include "config.h"
 #include "gps.h"
+
+#ifdef GPS_USE_FLOAT_TO_STRING
+	#include <math.h>
+#endif // GPS_USE_FLOAT_TO_STRING
 
 
 
@@ -45,110 +48,121 @@ inline void gpsClearDataRdy(void) {
 
 
 
-/* bardzo uproszczone przekształcenie stringa na liczbę float
- * tylko liczby dodatnie (bez znaków '+' lub '-')
- * brak obsługi zapisu naukowego
- */
-float myAtof(char s[]) {
-	float val, power;
-    int i;
-  
-	// zamiana strina na float
-    for(i=0; isspace(s[i]); i++) ; 		/* skip leading space */
-    for(val = 0.0; isdigit(s[i]); i++)  /* convert integer portion */
-        val = val * 10.0 + (s[i] - '0');
-    if(s[i] == '.') i++;				/* convert fraction portion */
-    for(power = 1.0; isdigit(s[i]); i++, power *= 10.0)
-        val = 10.0 * val + (s[i] - '0');
-
-    return val / power;
-}
-
-
-
-
-/* tablica pomocnicza do zapisu stringa z przekonwertowaną prędkościna na km/h lub m/s
- */
-uint8_t speed_tmp[6];
-
-
-
-uint8_t* floatToString(float num, float const tolerance) {
-	uint8_t *fstr=speed_tmp;		// wskaźnik do tablicy, który będziemy przesuwać
-	int8_t m = log10f(num);			// musi być ze znakiem!!!
-	uint8_t digit;
-	float weight;
-
-	if(!(num > 0.0f + tolerance)) 	// jeżeli jest mniejsze niż tolerancja to zapisujemy "0.0"
-	{
-		*(fstr++) = '0';
-		*(fstr++) = '.';
-		*(fstr++) = '0';
-	} else {
-		
-		while(num > 0.0f + tolerance)
+#ifdef GPS_USE_FLOAT_TO_STRING
+	
+	/* tablica pomocnicza do zapisu stringa z przekonwertowaną prędkościna na km/h lub m/s
+	 */
+	uint8_t speed_tmp[6];
+	
+    
+	uint8_t* floatToString(float num, float const tolerance) {
+		uint8_t *fstr=speed_tmp;		// wskaźnik do tablicy, który będziemy przesuwać
+		int8_t m = log10f(num);			// musi być ze znakiem!!!
+		uint8_t digit;
+		float weight;
+	
+		if(!(num > 0.0f + tolerance)) 	// jeżeli jest mniejsze niż tolerancja to zapisujemy "0.0"
 		{
-		    weight = powf(10.0f, (float)m);
-		    digit = floorf(num / weight);
-		    num -= (digit*weight);
-		    *(fstr++) = '0' + digit;
-		    if (m == 0)
-		        *(fstr++) = '.';
-		    --m;
-		}	
+			*(fstr++) = '0';
+			*(fstr++) = '.';
+			*(fstr++) = '0';
+		} else {
+			
+			while(num > 0.0f + tolerance)
+			{
+			    weight = powf(10.0f, (float)m);
+			    digit = floorf(num / weight);
+			    num -= (digit*weight);
+			    *(fstr++) = '0' + digit;
+			    if (m == 0)
+			        *(fstr++) = '.';
+			    --m;
+			}	
+		}
+		
+		*(fstr) = '\0';		// znak NULL
+		return speed_tmp;
+	}
+
+#endif // GPS_USE_FLOAT_TO_STRING
+
+
+#ifdef GPS_USE_FLOAT
+
+	/* bardzo uproszczone przekształcenie stringa na liczbę float
+	 * tylko liczby dodatnie (bez znaków '+' lub '-')
+	 * brak obsługi zapisu naukowego
+	 */
+	 
+	float myAtof(char s[]) {
+		float val, power;
+	    int i;
+	  
+		// zamiana strina na float
+	    for(i=0; isspace(s[i]); i++) ; 		/* skip leading space */
+	    for(val = 0.0; isdigit(s[i]); i++)  /* convert integer portion */
+	        val = val * 10.0 + (s[i] - '0');
+	    if(s[i] == '.') i++;				/* convert fraction portion */
+	    for(power = 1.0; isdigit(s[i]); i++, power *= 10.0)
+	        val = 10.0 * val + (s[i] - '0');
+	
+	    return val / power;
 	}
 	
-	*(fstr) = '\0';		// znak NULL
-	return speed_tmp;
-}
-
-
-
-float gpsSpeedInKnotsPH() {
-	return myAtof(gps.speed);
-}
-
-
-
-float gpsSpeedInKmPH() {
-	return myAtof(gps.speed) * 1.852;
-}
-
-
-float gpsSpeedInMPS() {
-	return myAtof(gps.speed) * (1852/3600);
-}
-
-
-
-
-
-
-
-/* prosta zamienia stringa z liczbą hex w postaci A9 na liczbę dziesiętną
- * tylko duże litery hex!
- */
-static uint8_t gpsHexToDec(uint8_t const *checksum) {
 	
-	uint8_t result;
-	if(checksum[0] >= 'A')
-		result = 16 * (checksum[0] - 'A' + 10);
-	else
-		result = 16 * (checksum[0] - '0');
+	float gpsSpeedInKnotsPH() {
+		return myAtof(gps.speed);
+	}
+	
+	
+	
+	float gpsSpeedInKmPH() {
+		return myAtof(gps.speed) * 1.852;
+	}
+	
+	
+	float gpsSpeedInMPS() {
+		return myAtof(gps.speed) * (1852/3600);
+	}
+
+
+#endif // GPS_USE_FLOAT
+
+
+#ifdef GPS_VERIFY_CHECKSUM
+	
+	/* prosta zamienia stringa z liczbą hex w postaci A9 na liczbę dziesiętną
+	 * tylko duże litery hex!
+	 */
+	static uint8_t gpsHexToDec(uint8_t const *checksum) {
 		
-	if(checksum[1] >= 'A')
-		result += checksum[1] - 'A' + 10;
-	else
-		result += checksum[1] - '0';
+		uint8_t result;
+		if(checksum[0] >= 'A')
+			result = 16 * (checksum[0] - 'A' + 10);
+		else
+			result = 16 * (checksum[0] - '0');
+			
+		if(checksum[1] >= 'A')
+			result += checksum[1] - 'A' + 10;
+		else
+			result += checksum[1] - '0';
+		
+		return result;
+	} 
 	
-	return result;
-} 
+#endif // GPS_VERIFY_CHECKSUM
 
 
 /* sprawdź czy odebrana suma kontrolna jest równa tej wyliczonej
+ * jeżeli sprawdzanie sumy kontrolnej jest wyłączone, to zawsze zwraca 1 (true)
  */
 inline uint8_t gpsVerifyChecksum(void){
-	return (gps.checksum == gpsHexToDec(gps.checksumRcv)) ? 1:0;	
+	
+	#ifdef GPS_VERIFY_CHECKSUM
+		return (gps.checksum == gpsHexToDec(gps.checksumRcv)) ? 1:0;
+	#else
+		return 1;
+	#endif // GPS_VERIFY_CHECKSUM
 }
 
 

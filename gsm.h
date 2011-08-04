@@ -15,7 +15,7 @@
  
 -----------------------------------------------------------------------------
  
- Changelog		:	0.01 - initial version
+ Changelog		:	0.1 - initial version
  
 -----------------------------------------------------------------------------
  
@@ -27,13 +27,15 @@
 #ifndef GSM_H_INCLUDED
 #define GSM_H_INCLUDED
 
-//#include "at.h"
+#define AT_LIB_VERSION 010	// library version X.YY (e.g. 1.00)
+
+
 
 
 // znak CTRL+Z - Substitute (SUB)
 #define CTRL_Z				"\x1a"
 
-#define GSM_BUFF_SIZE 		60
+#define GSM_RX_BUFF_SIZE 	60
 #define GSM_CMD_BUFF_SIZE 	80
 
 
@@ -61,11 +63,11 @@ void gsmConnectToBts(void);
  * dane wejściowe:
  * 		AT_cmd_string		- komenda do wysłania
  * 		response_string		- oczekiwana odpowiedź, może być fragment
- * 		no_of_attempts		- ilość prób, >=1
- * 		wait_delay			- ile ms które mamy czekać na odpowiedź; delay = 100ms * wait_delay,  >=1
+ * 		no_of_attempts		- ilość prób; >=1
+ * 		wait_max_delay		- ile maksymalnie ms mamy czekać na odpowiedź; delay = 100ms * wait_max_delay;  >=1
 
  */
-uint8_t gsmSendAtCmdWaitResp(uint8_t const *, uint8_t const *, uint8_t, uint8_t);
+enum AT_RESP_ENUM gsmSendAtCmdWaitResp(uint8_t const *, uint8_t const *, uint8_t, uint8_t);
 
 /*
  */
@@ -76,6 +78,13 @@ void gsmSendAtCmdNoResp(uint8_t const *, uint8_t);
  * jeżeli on wystąpi możemy zacząć nadawać treść SMS'a lub poprzez GPRS
  */
 inline void gsmWaitForCmdPrompt(void);
+
+
+
+
+enum RX_STATE_ENUM gsmIsRxFinished(void);
+
+
 
 /*
  */
@@ -114,6 +123,11 @@ inline void gsmRxcieEnable(void);
 
 
 
+
+//////////////////////////////////////////////////////////////////
+// struktury etc.
+
+
 /* pole bitowe
  * flagi informujące o stanie GSM
  */
@@ -133,33 +147,51 @@ volatile struct GSM_FLAGS gsmFlags;
 
 
 
+
+//////////////////////////////////////////////////////////////////
+// zmienne
+
+
 /* do przechowywania wyniku z gsmSendAtCmdWaitResp()
  * otrzymuje dane z 'enum AT_RESP_ENUM '
  */ 
-uint8_t gsmResponse;
+enum AT_RESP_ENUM gsmResponse;
 
 
 // bufor na dane odebrane z GSM
-volatile uint8_t gsmBuff[GSM_BUFF_SIZE];
-// index dla bufora
-volatile uint8_t gsmBuffIndex;
+volatile uint8_t gsmRxBuff[GSM_RX_BUFF_SIZE];
+// index dla bufora odiorczego
+volatile uint8_t gsmRxBuffIdx;
+
 
 // bufor do 'składania' komend AT do wysłania 
 uint8_t gsmCmdBuff[GSM_CMD_BUFF_SIZE];
-// index
-volatile uint8_t gsmCmdBuffIndex;
+// index dla bufora na komendy
+uint8_t gsmCmdBuffIdx;
 
+
+
+
+//////////////////////////////////////////////////////////////////
+// enums
 
 
 enum AT_RESP_ENUM 
 {
-  AT_RESP_ERR_NO_RESP = -1,   // nic nie odebrano
-  AT_RESP_ERR_DIF_RESP = 0,   // odebrana odpowiedź jest inna niż oczekiwana
-  AT_RESP_OK = 1,             // odebrana odpowiedź jest taka jak oczekiwana
+  AT_RESP_ERR_NO_RESP = -1,		// nic nie odebrano
+  AT_RESP_ERR_DIF_RESP = 0,		// odebrana odpowiedź jest inna niż oczekiwana
+  AT_RESP_OK = 1,				// odebrana odpowiedź jest taka jak oczekiwana
 
   AT_RESP_LAST_ITEM
 };
 
+
+enum RX_STATE_ENUM 
+{
+  RX_NOT_FINISHED = 0,			// nie zakończono odbioru
+  RX_FINISHED = 1,				// zakończono odbiór, coś odebrano
+  RX_LAST_ITEM
+};
 
 
 

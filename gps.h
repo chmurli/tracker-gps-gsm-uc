@@ -1,7 +1,7 @@
 /****************************************************************************
 
  File			:	gps.h
- Version		:	1.0 (2011.05.05)
+ Version		:	1.2 (2011.08.04)
  
  Author			:	Bartosz Chmura
  Copyright		:	(c) 2011 by Bartosz Chmura
@@ -25,13 +25,18 @@
  
 -----------------------------------------------------------------------------
  
- Changelog		:	* 1.0 - stable version
-					* 1.1 - dodano przeliczniki prędkości na km/h i m/s	
+ Changelog		:	* 1.0 	- wersja stabilna
+					* 1.1 	- dodano przeliczniki prędkości na km/h i m/s	
+					* 1.2 	- dodano opcje konfiguracyjne; włączenie/wyłączenie:
+								- operacji na liczbach zmiennoprzecinkowych
+								- użycia funkcji floatToString
+								- sprawdzania sumy kontrolnej
+							- drobne poprawki
 
  
 -----------------------------------------------------------------------------
  
- ToDo			:	* funkcje reset
+ ToDo			:	* 
 					
  
 ****************************************************************************/
@@ -42,10 +47,49 @@
 
 #include "config.h"
 
+#define AT_LIB_VERSION 012	// library version X.YY (e.g. 1.00)
+
+
+/* jeżeli zdefiniujemy - będzie można użyć funkcji do operacji na liczbach zmiennoprzecinkowych
+ * np. zamiana prędkości na liczbę float i zmiana jednostki prędkości
+ * potrzebne dla funkcji:
+ 		* gpsSpeedInKnotsPH
+		* gpsSpeedInKmPH
+		* gpsSpeedInMPS
+ * UWAGA!!!
+ * może powodować znaczne zwiększenie objętości programu!
+ */
+#define GPS_USE_FLOAT
+
+
+
+/* jeżeli zdefiniujemy - możemy używać funkcji floatToString
+ * przeważnie musimy też zdefiniować GPS_USE_FLOAT gdy chcemu używać tej funkcji
+ * UWAGA!!!
+ * może powodować znaczne zwiększenie objętości programu!
+ */
+#define GPS_USE_FLOAT_TO_STRING
+
+
+
+/* jeżeli zdefiniujemy - będzie sprawdzana suma kontrolna każdej ramki
+ * wyłączenie sprawdzania zmniejszy nieznacznie objętość programu i zwiększy jego szybkość
+ */
+#define GPS_VERIFY_CHECKSUM
+
+
+
+// zabezpieczenie
+#ifdef GPS_USE_FLOAT_TO_STRING
+	#ifndef GPS_USE_FLOAT
+		#warning "Zdefiniowana GPS_USE_FLOAT_TO_STRING, a nie zdefiniowano GPS_USE_FLOAT. Czy jesteś pewien?"
+	#endif // GPS_USE_FLOAT
+#endif // GPS_USE_FLOAT_TO_STRING
+
+
 
 // maksymalna długość znaków w ramce NMEA
 #define MAX_LEN_NMEA 82
-
 
 
 
@@ -80,28 +124,37 @@ extern inline uint8_t gpsDataRdy(void);
 extern inline void gpsClearDataRdy(void);
 
 
+#ifdef GPS_USE_FLOAT
 
-/* zwraca prędkość w węzły/h jako liczbę float
- */
-float gpsSpeedInKnotsPH();
+	/* zwraca prędkość w węzły/h jako liczbę float
+	 */
+	float gpsSpeedInKnotsPH();
+	
+	
+	/* zwraca prędkość w km/h jako liczbę float
+	 */
+	float gpsSpeedInKmPH();
+	
+	
+	/* zwraca prędkość w metry/s jako liczbę float
+	 */
+	float gpsSpeedInMPS();
+
+#endif // GPS_USE_FLOAT
 
 
-/* zwraca prędkość w km/h jako liczbę float
- */
-float gpsSpeedInKmPH();
 
+#ifdef GPS_USE_FLOAT_TO_STRING
 
-/* zwraca prędkość w metry/s jako liczbę float
- */
-float gpsSpeedInMPS();
+	/* zamiana float na string
+	 * tolerance - określa dokładność np. 0.01f
+	 * zamiana powoduje przekłamanie liczby o wartość tolerancji (+/- telerancja)
+	 * używane z funkcjami gpsSpeedInKnotsPH, gpsSpeedInKmPH i gpsSpeedInMPS
+	 */
+	uint8_t* floatToString(float num, float tolerance);
 
+#endif // GPS_USE_FLOAT_TO_STRING
 
-/* zamiana float na string
- * tolerance - określa dokładność np. 0.01f
- * zamiana powoduje przekłamanie liczby o wartość tolerancji (+/- telerancja)
- * używane z funkcjami gpsSpeedInKnotsPH, gpsSpeedInKmPH i gpsSpeedInMPS
- */
-uint8_t* floatToString(float num, float tolerance);
 
 
 
