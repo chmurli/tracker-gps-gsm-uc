@@ -58,6 +58,9 @@ void gsmConnectToBts(void)
 }
 
 
+//////////////////////////////////////////////////////////////////
+// proste funkcje (inline głównie)
+
 
 inline void gsmTurnOn(void) 
 {
@@ -104,6 +107,13 @@ inline void gsmRxcieDisable(void)	{	UCSR0B &= ~(1<<RXCIE0); 	}
 
 
 
+
+
+//////////////////////////////////////////////////////////////////
+// wysyłanie komend AT
+
+
+
 uint8_t gsmSendAtCmdWaitResp(
 			uint8_t const *AT_cmd_string,
 			uint8_t const *response_string,
@@ -131,7 +141,7 @@ uint8_t gsmSendAtCmdWaitResp(
 		
 		// czy coś otrzymano?
 		if(gsmBuff[0] != '\0') {
-			// sprawdź czy otrzymana odpowiedź jest równa tej oczekiwanej
+			// sprawdź czy oczekiwana odpowiedź zawarta jest w otrzymanej
 			if( strstr(gsmBuff, response_string) != NULL ) {
 				ret_val = AT_RESP_OK;
 				break;  // odpowiedź jest poprawna => koniec
@@ -162,6 +172,7 @@ void gsmSendAtCmdNoResp(uint8_t const *AT_cmd_string, uint8_t wait_delay)
 	while(wait_delay--) 
 		_delay_ms(100);
 }
+
 
 
 inline void gsmWaitForCmdPrompt(void) 
@@ -232,6 +243,11 @@ uint8_t gsmGprsSendData(uint8_t const *str_data)
 	return 0;
 }
 
+
+
+
+//////////////////////////////////////////////////////////////////
+// przerwanie do odbioru danych
 
 
 SIGNAL(USART0_RXC_vect)

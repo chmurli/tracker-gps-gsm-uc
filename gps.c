@@ -73,12 +73,11 @@ uint8_t speed_tmp[6];
 
 
 
-uint8_t* floatToString(float num) {
+uint8_t* floatToString(float num, float const tolerance) {
 	uint8_t *fstr=speed_tmp;		// wskaźnik do tablicy, który będziemy przesuwać
 	int8_t m = log10f(num);			// musi być ze znakiem!!!
 	uint8_t digit;
 	float weight;
-	float tolerance = 0.01f;
 
 	if(!(num > 0.0f + tolerance)) 	// jeżeli jest mniejsze niż tolerancja to zapisujemy "0.0"
 	{

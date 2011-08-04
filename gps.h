@@ -97,10 +97,11 @@ float gpsSpeedInMPS();
 
 
 /* zamiana float na string
- * powoduje przekłamanie liczby o wartość tolerancji (+/- telerancja)
+ * tolerance - określa dokładność np. 0.01f
+ * zamiana powoduje przekłamanie liczby o wartość tolerancji (+/- telerancja)
  * używane z funkcjami gpsSpeedInKnotsPH, gpsSpeedInKmPH i gpsSpeedInMPS
  */
-uint8_t* floatToString(float num);
+uint8_t* floatToString(float num, float tolerance);
 
 
 

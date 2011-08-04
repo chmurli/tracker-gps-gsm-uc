@@ -177,11 +177,11 @@ int main(void)
 		
 		
 		// czekaj
-		uint8_t i;
-		for(i=0; i<100; ++i) {
-			_delay_ms(100);
+		//uint8_t i;
+		//for(i=0; i<100; ++i) {
+		//	_delay_ms(100);
 			//diodeGreenToggle();
-		}
+		//}
 		//diodeGreenOn();
 
 
