@@ -10,6 +10,8 @@
 #include <avr/pgmspace.h>
 #include <inttypes.h>
 #include <util/delay.h>
+#include <ctype.h>
+
 #include "makra.h"
 #include "config.h"
 #include "gps.h"
@@ -52,11 +54,11 @@ inline void gpsClearDataRdy(void) {
 	
 	/* tablica pomocnicza do zapisu stringa z przekonwertowaną prędkościna na km/h lub m/s
 	 */
-	uint8_t speed_tmp[6];
+	char speed_tmp[6];
 	
     
-	uint8_t* floatToString(float num, float const tolerance) {
-		uint8_t *fstr=speed_tmp;		// wskaźnik do tablicy, który będziemy przesuwać
+	char* floatToString(float num, float const tolerance) {
+		char *fstr=speed_tmp;			// wskaźnik do tablicy, który będziemy przesuwać
 		int8_t m = log10f(num);			// musi być ze znakiem!!!
 		uint8_t digit;
 		float weight;
@@ -96,9 +98,9 @@ inline void gpsClearDataRdy(void) {
 	 
 	float myAtof(char s[]) {
 		float val, power;
-	    int i;
-	  
-		// zamiana strina na float
+	    uint8_t i;
+
+		// zamiana stringa na float
 	    for(i=0; isspace(s[i]); i++) ; 		/* skip leading space */
 	    for(val = 0.0; isdigit(s[i]); i++)  /* convert integer portion */
 	        val = val * 10.0 + (s[i] - '0');
@@ -110,19 +112,19 @@ inline void gpsClearDataRdy(void) {
 	}
 	
 	
-	float gpsSpeedInKnotsPH() {
-		return myAtof(gps.speed);
+	float gpsSpeedInKnotsPH(void) {
+		return myAtof((void *)gps.speed);
 	}
 	
 	
 	
-	float gpsSpeedInKmPH() {
-		return myAtof(gps.speed) * 1.852;
+	float gpsSpeedInKmPH(void) {
+		return myAtof((void *)gps.speed) * 1.852;
 	}
 	
 	
-	float gpsSpeedInMPS() {
-		return myAtof(gps.speed) * (1852/3600);
+	float gpsSpeedInMPS(void) {
+		return myAtof((void *)gps.speed) * (1852/3600);
 	}
 
 
@@ -134,7 +136,7 @@ inline void gpsClearDataRdy(void) {
 	/* prosta zamienia stringa z liczbą hex w postaci A9 na liczbę dziesiętną
 	 * tylko duże litery hex!
 	 */
-	static uint8_t gpsHexToDec(uint8_t const *checksum) {
+	static uint8_t gpsHexToDec(char const *checksum) {
 		
 		uint8_t result;
 		if(checksum[0] >= 'A')
@@ -156,10 +158,10 @@ inline void gpsClearDataRdy(void) {
 /* sprawdź czy odebrana suma kontrolna jest równa tej wyliczonej
  * jeżeli sprawdzanie sumy kontrolnej jest wyłączone, to zawsze zwraca 1 (true)
  */
-inline uint8_t gpsVerifyChecksum(void){
+static inline uint8_t gpsVerifyChecksum(void){
 	
 	#ifdef GPS_VERIFY_CHECKSUM
-		return (gps.checksum == gpsHexToDec(gps.checksumRcv)) ? 1:0;
+		return (gps.checksum == gpsHexToDec((void *)gps.checksumRcv)) ? 1:0;
 	#else
 		return 1;
 	#endif // GPS_VERIFY_CHECKSUM
@@ -190,7 +192,7 @@ SIGNAL(USART1_RXC_vect)
 {
 	
 	// pobieramy znak z rejestru od przerwania
-	uint8_t znak;
+	char znak;
 	znak=UDR1;
 	
 	

@@ -3,8 +3,9 @@
 // 
 // 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-#ifndef MAKRA_H_INCLUDED
-#define MAKRA_H_INCLUDED
+#ifndef __MAKRA_H_INCLUDED
+#define __MAKRA_H_INCLUDED
+
 
 // Makra upraszczające dostęp do portów
 // *** Port
@@ -21,7 +22,7 @@
 #define NOP() {asm volatile("nop"::);}
 
 // Ilość elementów tablicy
-#define ELEMS(p) (sizeof(p)/sizeof(p[0]))
+#define ELEMS(p) (sizeof(p)/sizeof(*p))		// lub (sizeof(p)/sizeof(p[0]))
 
 
-#endif //MAKRA_H_INCLUDED
+#endif // __MAKRA_H_INCLUDED

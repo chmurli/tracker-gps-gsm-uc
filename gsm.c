@@ -12,6 +12,8 @@
 #include <inttypes.h>
 #include <util/delay.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "makra.h"
 #include "config.h"
 #include "uart.h"
@@ -24,6 +26,8 @@
 #endif 
 
 
+//////////////////////////////////////////////////////////////////
+// główne funkcje dla GSM
 
 void gsmInit(void) 
 {
@@ -58,8 +62,192 @@ void gsmConnectToBts(void)
 }
 
 
+
+
 //////////////////////////////////////////////////////////////////
-// proste funkcje (inline głównie)
+// wysyłanie komend AT
+
+
+
+enum AT_RESP_ENUM gsmSendAtCmdWaitResp(
+			char const *AT_cmd_string,
+			char const *response_string,
+			uint8_t no_of_attempts,
+			uint8_t wait_max_delay) 
+{
+	
+	enum AT_RESP_ENUM ret_val = AT_RESP_ERR_NO_RESP;
+	uint8_t wait_max_delay_tmp;
+	
+	
+	while(no_of_attempts){
+		
+		// czyszczenie bufora
+		gsmRxBuff[0]='\0';
+		gsmRxBuffIdx=0;
+		
+		
+		// wyślij
+		fprintf_P(fUartGsm, PSTR("%s\r\n"), AT_cmd_string);
+		
+		wait_max_delay_tmp=wait_max_delay+1; 	// dodajemy 1 bo będzie predekrementacja później
+		wait_max_delay+=5;						// zwiększamy opóźnienie dla następnych prób
+
+
+		// czekaj dopóki nie wykryje odbioru końca nadawania lub upłynie max. czas	
+		while(!gsmIsRxFinished() && --wait_max_delay_tmp)
+			_delay_ms(100);
+				
+			
+		// gdy odebrano jakieś dane
+		if(gsmIsRxFinished()){
+			// sprawdź czy oczekiwana odpowiedź zawarta jest w otrzymanej
+			if( strstr((void *)gsmRxBuff, response_string) != NULL )
+				ret_val = AT_RESP_OK;			// odpowiedź jest poprawna
+			else
+				ret_val = AT_RESP_ERR_DIF_RESP; // niepoprawna
+				
+			break; // wyjdź z pętli while, przejdź do return
+		} 
+		
+		--no_of_attempts;
+	}
+	
+	return ret_val;
+
+}
+
+
+
+void gsmSendAtCmdNoResp(char const *AT_cmd_string, uint8_t wait_delay) 
+{
+	
+	// czyszczenie bufora
+	gsmRxBuff[0]='\0';
+	gsmRxBuffIdx=0;
+	
+	// wyślij
+	fprintf_P(fUartGsm, PSTR("%s\r\n"), AT_cmd_string);
+	
+	// czekaj zadanie opóźnienie na wykonanie komendy
+	while(wait_delay--) 
+		_delay_ms(100);
+}
+
+
+/* czekaj na "znak zachęty" do wprowadzania danych
+ */
+void gsmWaitForCmdPrompt(void) 
+{
+	while( strstr((void *)gsmRxBuff, "> ") == NULL ) 
+		; // VOID
+}
+
+
+
+/* zwykle odpowiedź zwracana po komendach AT przez SIM900 ma postać: 
+ * 		<CR><LF><response><CR><LF>
+ * sprawdzamy wiec 2 ostatnie znaki(\r\n) i czy przed nimi są jeszcze jakieś inne
+ */
+enum RX_STATE_ENUM gsmIsRxFinished(void)
+{
+	enum RX_STATE_ENUM ret_val = RX_NOT_FINISHED;
+		
+	if(	(gsmRxBuffIdx >= 3) && 
+		(gsmRxBuff[gsmRxBuffIdx-1] == '\n') && 
+		(gsmRxBuff[gsmRxBuffIdx-2] == '\r') )
+			ret_val = RX_FINISHED;
+	
+	return ret_val;
+}
+
+
+
+
+
+//////////////////////////////////////////////////////////////////
+// GPRS
+
+
+enum GPRS_INIT_ENUM gsmGprsInit(char const *apn)
+{
+	
+	
+	// przygotuj komendę, np. AT+CSTT="internet"
+	strcpy(gsmCmdBuff, "AT+CSTT=\"");
+	strcat(gsmCmdBuff, apn);
+	strcat(gsmCmdBuff, "\""); // koniec
+			
+	while( gsmSendAtCmdWaitResp(gsmCmdBuff, "OK", 1, 8) != AT_RESP_OK )
+		; // VOID
+	while( gsmSendAtCmdWaitResp("AT+CIICR", "OK", 1, 15) != AT_RESP_OK )
+		; // VOID
+		
+	// pobierz adres IP
+	gsmSendAtCmdNoResp("AT+CIFSR", 4);
+	
+	// skopiuj adres IP do specjalnej zmiennej tablicowej
+	strcpy((void *)gsm.ipAddress, (void *)gsmRxBuff);
+
+	
+	return GPRS_INIT_OK;
+}
+
+
+enum GPRS_SOCKET_ENUM gsmGprsOpenSocket(
+			char const *socket_type,
+			char const *remote_addr,
+			char const *remote_port)
+{
+	
+	// przygotuj komendę, np. AT+CIPSTART="TCP","chmurli.dyndns.info","9999"
+	strcpy(gsmCmdBuff, "AT+CIPSTART=\"");
+	strcat(gsmCmdBuff, socket_type);				// dodaj typ gniazda (TCP/UDP)
+	strcat(gsmCmdBuff, "\",\"");
+	strcat(gsmCmdBuff, remote_addr);				// dodaj zdalny adres IP
+	strcat(gsmCmdBuff, "\",\"");
+	strcat(gsmCmdBuff, remote_port);				// dodaj numer zdalnego portu
+	strcat(gsmCmdBuff, "\""); 						// koniec
+
+
+	/* wyślij i czekaj dłuższy czas
+	 * UWAGA!
+	 * po tej komendzie otrzymamy niemal od razu odpowiedź "OK", a chwilę potem komunikat "CONNECTED OK"
+	 * nie możemy wieć pomylić komunikatów;
+	 * musimy to wykryć lub czekać dłuższy czas na dalsze instrukcje
+	 */
+	gsmSendAtCmdNoResp(gsmCmdBuff, 20);
+
+
+	// sprawdź czy połączenie zostało otwarte pomyślnie i zwróć wartość enum
+	if( strstr((void *)gsmRxBuff, "CONNECTED OK") != NULL )
+		return GPRS_SOCKET_OPEN;
+	else
+		return GPRS_SOCKET_NOT_OPEN;
+
+	//return gsmSendAtCmdWaitResp(gsmCmdBuff, "CONNECTED OK", 1, 15);
+
+}
+
+
+
+uint8_t gsmGprsSendData(char const *str_data)
+{
+	// czekaj 200ms, powinien być już znak '>'
+	gsmSendAtCmdNoResp("AT+CIPSEND", 2);
+	//gsmWaitForCmdPrompt();
+			
+	// wyślij stringa kończąc go Ctrl+Z (0x1a)	
+	fprintf_P(fUartGsm, PSTR("%s" CTRL_Z), str_data);
+	
+	return 0;
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////
+// proste funkcje inline
 
 
 inline void gsmTurnOn(void) 
@@ -109,189 +297,6 @@ inline void gsmRxcieDisable(void)	{	UCSR0B &= ~(1<<RXCIE0); 	}
 
 
 
-//////////////////////////////////////////////////////////////////
-// wysyłanie komend AT
-
-
-
-enum AT_RESP_ENUM gsmSendAtCmdWaitResp(
-			uint8_t const *AT_cmd_string,
-			uint8_t const *response_string,
-			uint8_t no_of_attempts,
-			uint8_t wait_max_delay) 
-{
-	
-	enum AT_RESP_ENUM ret_val = AT_RESP_ERR_NO_RESP;
-	uint8_t wait_max_delay_tmp;
-	
-	
-	while(no_of_attempts){
-		
-		// czyszczenie bufora
-		gsmRxBuff[0]='\0';
-		gsmRxBuffIdx=0;
-		
-		
-		// wyślij
-		fprintf_P(fUartGsm, PSTR("%s\r\n"), AT_cmd_string);
-		
-		wait_max_delay_tmp=wait_max_delay+1; 	// dodajemy 1 bo będzie predekrementacja później
-		wait_max_delay+=5;						// zwiększamy opóźnienie dla następnych prób
-
-
-		// czekaj dopóki nie wykryje odbioru końca nadawania lub upłynie max. czas	
-		while(!gsmIsRxFinished() && --wait_max_delay_tmp)
-			_delay_ms(100);
-				
-			
-		// gdy odebrano jakieś dane
-		if(gsmIsRxFinished()){
-			// sprawdź czy oczekiwana odpowiedź zawarta jest w otrzymanej
-			if( strstr(gsmRxBuff, response_string) != NULL )
-				ret_val = AT_RESP_OK;			// odpowiedź jest poprawna
-			else
-				ret_val = AT_RESP_ERR_DIF_RESP; // niepoprawna
-				
-			break; // wyjdź z pętli while, przejdź do return
-		} 
-		
-		--no_of_attempts;
-	}
-	
-	return ret_val;
-
-}
-
-
-
-void gsmSendAtCmdNoResp(uint8_t const *AT_cmd_string, uint8_t wait_delay) 
-{
-	
-	// czyszczenie bufora
-	gsmRxBuff[0]='\0';
-	gsmRxBuffIdx=0;
-	
-	// wyślij
-	fprintf_P(fUartGsm, PSTR("%s\r\n"), AT_cmd_string);
-	
-	// czekaj zadanie opóźnienie na wykonanie komendy
-	while(wait_delay--) 
-		_delay_ms(100);
-}
-
-
-/* czekaj na "znak zachęty" do wprowadzania danych
- */
-inline void gsmWaitForCmdPrompt(void) 
-{
-	while( strstr(gsmRxBuff, "> ") == NULL ) 
-		; // VOID
-}
-
-
-
-/* zwykle odpowiedź zwracana po komendach AT przez SIM900 ma postać: 
- * 		<CR><LF><response><CR><LF>
- * sprawdzamy wiec 2 ostatnie znaki(\r\n) i czy przed nimi są jeszcze jakieś inne
- */
-enum RX_STATE_ENUM gsmIsRxFinished(void)
-{
-	enum RX_STATE_ENUM ret_val = RX_NOT_FINISHED;
-		
-	if(	(gsmRxBuffIdx >= 3) && 
-		(gsmRxBuff[gsmRxBuffIdx-1] == '\n') && 
-		(gsmRxBuff[gsmRxBuffIdx-2] == '\r') )
-			ret_val = RX_FINISHED;
-	
-	return ret_val;
-}
-
-
-
-
-
-
-
-//////////////////////////////////////////////////////////////////
-// GPRS
-
-
-enum GPRS_INIT_ENUM gsmGprsInit(uint8_t const *apn)
-{
-	
-	
-	// przygotuj komendę, np. AT+CSTT="internet"
-	strcpy(gsmCmdBuff, "AT+CSTT=\"");
-	strcat(gsmCmdBuff, apn);
-	strcat(gsmCmdBuff, "\""); // koniec
-			
-	while( gsmSendAtCmdWaitResp(gsmCmdBuff, "OK", 1, 8) != AT_RESP_OK )
-		; // VOID
-	while( gsmSendAtCmdWaitResp("AT+CIICR", "OK", 1, 15) != AT_RESP_OK )
-		; // VOID
-		
-	// pobierz adres IP
-	gsmSendAtCmdNoResp("AT+CIFSR", 4);
-	
-	// skopiuj adres IP do specjalnej zmiennej tablicowej
-	strcpy(gsm.ipAddress, gsmRxBuff);
-
-	
-	return GPRS_INIT_OK;
-}
-
-
-enum GPRS_SOCKET_ENUM gsmGprsOpenSocket(
-			uint8_t const *socket_type,
-			uint8_t const *remote_addr,
-			uint8_t const *remote_port)
-{
-	
-	// przygotuj komendę, np. AT+CIPSTART="TCP","chmurli.dyndns.info","9999"
-	strcpy(gsmCmdBuff, "AT+CIPSTART=\"");
-	strcat(gsmCmdBuff, socket_type);				// dodaj typ gniazda (TCP/UDP)
-	strcat(gsmCmdBuff, "\",\"");
-	strcat(gsmCmdBuff, remote_addr);				// dodaj zdalny adres IP
-	strcat(gsmCmdBuff, "\",\"");
-	strcat(gsmCmdBuff, remote_port);				// dodaj numer zdalnego portu
-	strcat(gsmCmdBuff, "\""); 						// koniec
-
-
-	/* wyślij i czekaj dłuższy czas
-	 * UWAGA!
-	 * po tej komendzie otrzymamy niemal od razu odpowiedź "OK", a chwilę potem komunikat "CONNECTED OK"
-	 * nie możemy wieć pomylić komunikatów;
-	 * musimy to wykryć lub czekać dłuższy czas na dalsze instrukcje
-	 */
-	gsmSendAtCmdNoResp(gsmCmdBuff, 20);
-
-
-	// sprawdź czy połączenie zostało otwarte pomyślnie i zwróć wartość enum
-	if( strstr(gsmRxBuff, "CONNECTED OK") != NULL )
-		return GPRS_SOCKET_OPEN;
-	else
-		return GPRS_SOCKET_NOT_OPEN;
-
-	//return gsmSendAtCmdWaitResp(gsmCmdBuff, "CONNECTED OK", 1, 15);
-
-}
-
-
-
-uint8_t gsmGprsSendData(uint8_t const *str_data)
-{
-	// czekaj 200ms, powinien być już znak '>'
-	gsmSendAtCmdNoResp("AT+CIPSEND", 2);
-	//gsmWaitForCmdPrompt();
-			
-	// wyślij stringa kończąc go Ctrl+Z (0x1a)	
-	fprintf_P(fUartGsm, PSTR("%s" CTRL_Z), str_data);
-	
-	return 0;
-}
-
-
-
 
 //////////////////////////////////////////////////////////////////
 // przerwanie do odbioru danych
@@ -301,7 +306,7 @@ SIGNAL(USART0_RXC_vect)
 {
 	
 	// pobieramy znak z rejestru od przerwania
-	uint8_t znak;
+	char znak;
 	znak=UDR0;
 
 	gsmRxBuff[gsmRxBuffIdx++]=znak;

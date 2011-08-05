@@ -55,7 +55,7 @@ int uartGsmGet(void)
 // tworzymy ręcznie strukturę FILE (zamiast alokować dynamicznie) 
 FILE fileUartGsm = FDEV_SETUP_STREAM(uartGsmPut, uartGsmGet, _FDEV_SETUP_RW);
 // wskaźnik do stworzonej struktury
-FILE* fUartGsm = (void*)&fileUartGsm;
+FILE* fUartGsm = (void *)&fileUartGsm;
 
 
 
@@ -111,7 +111,7 @@ int uartGpsGet(void)
 // tworzymy ręcznie strukturę FILE (zamiast alokować dynamicznie) 
 FILE fileUartGps = FDEV_SETUP_STREAM(uartGpsPut, uartGpsGet, _FDEV_SETUP_RW);
 // wskaźnik do stworzonej struktury
-FILE* fUartGps = (void*)&fileUartGps;
+FILE* fUartGps = (void *)&fileUartGps;
 
 
 

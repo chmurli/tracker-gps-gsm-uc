@@ -37,17 +37,20 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <string.h>
+
 
 #include "config.h"
 #include "makra.h"
 #include "uart.h"
 #include "gps.h"
 #include "gsm.h"
-#include "at.h"
+//#include "at.h"
 
-#include <util/delay.h>
+
 
 
 /* diody sygnalizacyjne
@@ -67,7 +70,7 @@ inline void diodeRedToggle(void) 	{	PORT(DIODE_RED_PORT)   ^= 1<<DIODE_RED;			}
 
 
 // instrukcja wysyłana gdy GPS nie ustalił pozycji i minał zadany czaw (NO_FIX_HARD_SEND_DATA)
-uint8_t *INSTRUCTION_NOFIX="!nofix\r\n";
+char *INSTRUCTION_NOFIX="!nofix\r\n";
 
 
 /* zmianna sumuje przebyty dystans
@@ -119,7 +122,7 @@ int main(void)
 		 * domyślnie powinny być gotowe co sekundę jeżeli nie było błędów w transmisji
 		 */ 
 		if(gpsDataRdy()) {
-			gpsDisable();
+			gpsDisable();	// zablokuj przerwanie
 
 
 			// gdy pozycja z GPS została ustalona poprawnie
@@ -165,23 +168,23 @@ int main(void)
 					 * 		latitude,latitudeInd,longitude,longitudeInd,altitude,speed,satellites,pdop,mode
 					 * 		5013.2225,N,01903.7918,E,172.3,0.16,4,1.21,D\r\n
 					 */  
-					strcpy(gsmCmdBuff, gps.latitude);		// strcpy - nastąpi "wyczyszczenie" poprzednich danych
+					strcpy(gsmCmdBuff, (void *)gps.latitude);		// strcpy - nastąpi "wyczyszczenie" poprzednich danych
 					strcat(gsmCmdBuff, ",");				// dalej strcat
-					strcat(gsmCmdBuff, gps.latitudeInd);
+					strcat(gsmCmdBuff, (void *)gps.latitudeInd);
 					strcat(gsmCmdBuff, ",");
-					strcat(gsmCmdBuff, gps.longitude);
+					strcat(gsmCmdBuff, (void *)gps.longitude);
 					strcat(gsmCmdBuff, ",");
-					strcat(gsmCmdBuff, gps.longitudeInd);
+					strcat(gsmCmdBuff, (void *)gps.longitudeInd);
 					strcat(gsmCmdBuff, ",");
-					strcat(gsmCmdBuff, gps.altitude);
+					strcat(gsmCmdBuff, (void *)gps.altitude);
 					strcat(gsmCmdBuff, ",");
-					strcat(gsmCmdBuff, gps.speed);
+					strcat(gsmCmdBuff, (void *)gps.speed);
 					strcat(gsmCmdBuff, ",");
-					strcat(gsmCmdBuff, gps.satellites);
+					strcat(gsmCmdBuff, (void *)gps.satellites);
 					strcat(gsmCmdBuff, ",");
-					strcat(gsmCmdBuff, gps.pdop);
+					strcat(gsmCmdBuff, (void *)gps.pdop);
 					strcat(gsmCmdBuff, ",");
-					strcat(gsmCmdBuff, gps.mode);
+					strcat(gsmCmdBuff, (void *)gps.mode);
 					strcat(gsmCmdBuff, "\r\n"); 			// koniec
 					
 					
@@ -223,7 +226,7 @@ int main(void)
 			
 			
 			
-			gpsClearDataRdy();
+			gpsClearDataRdy();	// odblokuj przerwanie
 			gpsEnable();
 		}
 		

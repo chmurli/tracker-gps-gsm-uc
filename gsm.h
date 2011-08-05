@@ -27,7 +27,7 @@
 #ifndef __GSM_H_INCLUDED
 #define __GSM_H_INCLUDED
 
-#define GSM_LIB_VERSION 010	// library version X.YY (e.g. 1.00)
+#define GSM_LIB_VERSION 010		// library version X.YY (e.g. 1.00)
 
 
 
@@ -39,6 +39,9 @@
 #define GSM_CMD_BUFF_SIZE 	80
 
 
+
+//////////////////////////////////////////////////////////////////
+// główne funkcje dla GSM
 
 
 /* inicjacja modułu GSM, konfiguracja I/O
@@ -55,6 +58,12 @@ void gsmConnectToBts(void);
 
 
 
+
+//////////////////////////////////////////////////////////////////
+// wysyłanie komend AT
+
+
+
 /* wyślij komendę AT, czekaj na odpowiedź i porównaj ją z tą oczekiwaną 
  * 
  * użycie:
@@ -66,58 +75,77 @@ void gsmConnectToBts(void);
  * 		no_of_attempts		- ilość prób; >=1
  * 		wait_max_delay		- ile maksymalnie ms mamy czekać na odpowiedź; delay = 100ms * wait_max_delay;  >=1
  */
-enum AT_RESP_ENUM gsmSendAtCmdWaitResp(uint8_t const *, uint8_t const *, uint8_t, uint8_t);
+enum AT_RESP_ENUM gsmSendAtCmdWaitResp(char const *, char const *, uint8_t, uint8_t);
+
 
 /*
  */
-void gsmSendAtCmdNoResp(uint8_t const *, uint8_t);
+void gsmSendAtCmdNoResp(char const *, uint8_t);
 
 
 /* czekaj na znak zachęty (command prompt)
  * jeżeli on wystąpi możemy zacząć nadawać treść SMS'a lub poprzez GPRS
  */
-inline void gsmWaitForCmdPrompt(void);
+void gsmWaitForCmdPrompt(void);
 
 
 
-
+/*
+ */
 enum RX_STATE_ENUM gsmIsRxFinished(void);
 
 
 
-/*
- */
-enum GPRS_INIT_ENUM gsmGprsInit(uint8_t const *);
+
+//////////////////////////////////////////////////////////////////
+// GPRS
 
 /*
  */
-enum GPRS_SOCKET_ENUM gsmGprsOpenSocket(uint8_t const *, uint8_t const *, uint8_t const *);
+enum GPRS_INIT_ENUM gsmGprsInit(char const *);
 
 /*
  */
-uint8_t gsmGprsSendData(uint8_t const *);
+enum GPRS_SOCKET_ENUM gsmGprsOpenSocket(char const *, char const *, char const *);
+
+/*
+ */
+uint8_t gsmGprsSendData(char const *);
+
+
+
+
+//////////////////////////////////////////////////////////////////
+// proste funkcje inline
+
+
+extern inline void gsmTurnOn(void);
+extern inline void gsmTurnOff(void);
 
 
 // włączenie/wyłącznie wyjść z uC do modułu GSM
-inline void gsmRtsOn(void);
-inline void gsmRtsOff(void);
-inline void gsmDtrOn(void);
-inline void gsmDtrOff(void);
-inline void gsmPwrkeyOn(void);
-inline void gsmPwrkeyOff(void);
-inline void gsmResetOn(void);
-inline void gsmResetOff(void);
+extern inline void gsmRtsOn(void);
+extern inline void gsmRtsOff(void);
+extern inline void gsmDtrOn(void);
+extern inline void gsmDtrOff(void);
+extern inline void gsmPwrkeyOn(void);
+extern inline void gsmPwrkeyOff(void);
+extern inline void gsmResetOn(void);
+extern inline void gsmResetOff(void);
 
+/*
+ */
+extern inline uint8_t gsmCtsCheck(void);
 
 
 /* zatrzymuje odbieranie danych z GSM
  * GSM dalej działa i może wysyłać dane, ale przerwanie które je odbiera jest wyłączone
  */
-inline void gsmRxcieDisable(void);
+extern inline void gsmRxcieDisable(void);
 
 /* wznawia odbieranie danych z GSM po użyciu gsmRxcieDisable()
  */
-inline void gsmRxcieEnable(void);
+extern inline void gsmRxcieEnable(void);
 
 
 
@@ -165,7 +193,7 @@ enum GPRS_SOCKET_ENUM
 
 struct GSM_DATA {
 	
-	uint8_t ipAddress[16+1];			// otrzymany adres IP
+	char ipAddress[16+1];			// otrzymany adres IP
 	enum AT_RESP_ENUM response;			// do przechowywania wyniku z gsmSendAtCmdWaitResp
 };
 
@@ -200,13 +228,13 @@ volatile struct GSM_FLAGS gsmFlags;
 
 
 // bufor na dane odebrane z GSM
-volatile uint8_t gsmRxBuff[GSM_RX_BUFF_SIZE];
+volatile char gsmRxBuff[GSM_RX_BUFF_SIZE];
 // index dla bufora odiorczego
 volatile uint8_t gsmRxBuffIdx;
 
 
 // bufor do 'składania' komend AT do wysłania 
-uint8_t gsmCmdBuff[GSM_CMD_BUFF_SIZE];
+char gsmCmdBuff[GSM_CMD_BUFF_SIZE];
 // index dla bufora na komendy
 uint8_t gsmCmdBuffIdx;
 

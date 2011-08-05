@@ -47,7 +47,7 @@
 
 #include "config.h"
 
-#define GPS_LIB_VERSION 012	// library version X.YY (e.g. 1.00)
+#define GPS_LIB_VERSION 012		// library version X.YY (e.g. 1.00)
 
 
 /* jeżeli zdefiniujemy - będzie można użyć funkcji do operacji na liczbach zmiennoprzecinkowych
@@ -144,17 +144,17 @@ extern inline void gpsClearDataRdy(void);
 
 	/* zwraca prędkość w węzły/h jako liczbę float
 	 */
-	float gpsSpeedInKnotsPH();
+	float gpsSpeedInKnotsPH(void);
 	
 	
 	/* zwraca prędkość w km/h jako liczbę float
 	 */
-	float gpsSpeedInKmPH();
+	float gpsSpeedInKmPH(void);
 	
 	
 	/* zwraca prędkość w metry/s jako liczbę float
 	 */
-	float gpsSpeedInMPS();
+	float gpsSpeedInMPS(void);
 
 #endif // GPS_USE_FLOAT
 
@@ -167,7 +167,7 @@ extern inline void gpsClearDataRdy(void);
 	 * zamiana powoduje przekłamanie liczby o wartość tolerancji (+/- telerancja)
 	 * używane z funkcjami gpsSpeedInKnotsPH, gpsSpeedInKmPH i gpsSpeedInMPS
 	 */
-	uint8_t* floatToString(float num, float tolerance);
+	char* floatToString(float num, float tolerance);
 
 #endif // GPS_USE_FLOAT_TO_STRING
 
@@ -281,30 +281,30 @@ Checksum 			*04
  */
 struct GPS_DATA {
 	
-	uint8_t time[6+1];				// czas UTC 					- 185724
-	uint8_t date[6+1];				// data; ddmmyy					- 140508
+	char time[6+1];				// czas UTC 					- 185724
+	char date[6+1];				// data; ddmmyy					- 140508
 	
 	
-	uint8_t latitude[9+1];			// szerokość geograficzna		- 5013.1744
-	uint8_t latitudeInd[1+1];		// wskaźnik kierunku N/S		- N	
-	uint8_t longitude[10+1];		// długość geograficzna			- 01903.8160
-	uint8_t longitudeInd[1+1];		// wskaźnik kierunku E/W 		- E
-	uint8_t altitude[7+1];			// wysokość w m. n.p.m.			- 17.3
-	uint8_t speed[7+1];				// prędkość	w węzłach			- 0.06 
+	char latitude[9+1];			// szerokość geograficzna		- 5013.1744
+	char latitudeInd[1+1];		// wskaźnik kierunku N/S		- N	
+	char longitude[10+1];		// długość geograficzna			- 01903.8160
+	char longitudeInd[1+1];		// wskaźnik kierunku E/W 		- E
+	char altitude[7+1];			// wysokość w m. n.p.m.			- 17.3
+	char speed[7+1];				// prędkość	w węzłach			- 0.06 
 	
 	
-	uint8_t satellites[2+1];		// ilość używanych satelit		- 9
-	uint8_t status[1+1];			// status; A lub V				- A
-	uint8_t mode[1+1];				// tryb; czy pomiar z DGPS		- A
+	char satellites[2+1];		// ilość używanych satelit		- 9
+	char status[1+1];			// status; A lub V				- A
+	char mode[1+1];				// tryb; czy pomiar z DGPS		- A
 	
 	
-	uint8_t hdop[4+1];				// precyzja szer. geo.			- 0.89
-	uint8_t vdop[4+1];				// precyzja dł. geo.			- 0.80
-	uint8_t pdop[4+1];				// precyzja dla trzech wpsółrz.	- 1.20
+	char hdop[4+1];				// precyzja szer. geo.			- 0.89
+	char vdop[4+1];				// precyzja dł. geo.			- 0.80
+	char pdop[4+1];				// precyzja dla trzech wpsółrz.	- 1.20
 	
 
-	uint8_t checksumRcv[2+1];		// pole na sumę kontrolną odebraną z GPS
-	uint8_t checksum;				// pole na sumę kontrolną wyliczoną
+	char checksumRcv[2+1];		// pole na sumę kontrolną odebraną z GPS
+	char checksum;				// pole na sumę kontrolną wyliczoną
 	
 };
 

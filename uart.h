@@ -5,8 +5,8 @@
 ****************************************************************************/
 
 
-#ifndef UART_H_INCLUDED
-#define UART_H_INCLUDED
+#ifndef __UART_H_INCLUDED
+#define __UART_H_INCLUDED
 
 #include <stdio.h>
 
@@ -16,7 +16,7 @@
 
 
 // GSM
-void uartGpsInit(void);
+void uartGsmInit(void);
 int uartGsmPut(char znak);
 int uartGsmGet(void);
 extern FILE* fUartGsm;
@@ -32,4 +32,4 @@ extern FILE* fUartGps;
 
 
 
-#endif // UART_H_INCLUDED
+#endif // __UART_H_INCLUDED
