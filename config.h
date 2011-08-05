@@ -5,8 +5,8 @@
 ****************************************************************************/
 
 
-#ifndef CONFIG_H_INCLUDED
-#define CONFIG_H_INCLUDED
+#ifndef __CONFIG_H_INCLUDED
+#define __CONFIG_H_INCLUDED
 
 
 #ifndef F_CPU
@@ -24,12 +24,20 @@
 #define GPRS_APN			"internet"
 
 
+/* po przebyciu jakiego dystansu w metrach mamy wysyłać dane na serwer
+ * jeżeli prędkość w m/s będzie większa niż zadana wartość dane będą wysyłane co sekundę
+ */
+#define DISTANCE_SEND_DATA		15
 
-// czas w sekundach co jaki wysyłać dane z pozycją do serwera
-#define FIX_CNT_TIME		10
+/* czas w sekundach co jaki wymusić wysłanie danch z pozycją do serwera niezależnie od prędkości
+ * jeżeli urządzenie mobilne się nie porusza dane będą wysyłane rzadko np. co 5 minut
+ */
+#define FIX_HARD_SEND_DATA		60
 
-// czas w sekundach co jaki wysyłać informację o niepoprawnym ustaleniu pozycji
-#define NO_FIX_CNT_TIME		30
+/* czas w sekundach co jaki wysyłać informację o niepoprawnym ustaleniu pozycji
+ */
+#define NO_FIX_HARD_SEND_DATA	30
+
 
 
 
@@ -132,4 +140,4 @@
 
 
 
-#endif //CONFIG_H_INCLUDED
+#endif // __CONFIG_H_INCLUDED

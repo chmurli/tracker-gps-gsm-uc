@@ -42,12 +42,12 @@
 ****************************************************************************/
 
 
-#ifndef GPS_H_INCLUDED
-#define GPS_H_INCLUDED
+#ifndef __GPS_H_INCLUDED
+#define __GPS_H_INCLUDED
 
 #include "config.h"
 
-#define AT_LIB_VERSION 012	// library version X.YY (e.g. 1.00)
+#define GPS_LIB_VERSION 012	// library version X.YY (e.g. 1.00)
 
 
 /* jeżeli zdefiniujemy - będzie można użyć funkcji do operacji na liczbach zmiennoprzecinkowych
@@ -124,7 +124,23 @@ extern inline uint8_t gpsDataRdy(void);
 extern inline void gpsClearDataRdy(void);
 
 
+
 #ifdef GPS_USE_FLOAT
+
+/* mała ściągawka
+ * 
+ * węzły/h		km/h		m/s
+ * ---------------------------------
+ * 1			1.852		0.5
+ * 2			3.704		1
+ * 10			18.52		5
+ * 20			37.04		10
+ * 30			55.56		15
+ * 40			74.08		20
+ * 50			92.6		25
+ * 60			111.12		30
+ */
+
 
 	/* zwraca prędkość w węzły/h jako liczbę float
 	 */
@@ -330,4 +346,4 @@ volatile struct GPS_FLAGS gpsFlags;
 
 
 
-#endif // GPS_H_INCLUDED
+#endif // __GPS_H_INCLUDED

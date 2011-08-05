@@ -24,10 +24,10 @@
  
 ****************************************************************************/
 
-#ifndef GSM_H_INCLUDED
-#define GSM_H_INCLUDED
+#ifndef __GSM_H_INCLUDED
+#define __GSM_H_INCLUDED
 
-#define AT_LIB_VERSION 010	// library version X.YY (e.g. 1.00)
+#define GSM_LIB_VERSION 010	// library version X.YY (e.g. 1.00)
 
 
 
@@ -65,7 +65,6 @@ void gsmConnectToBts(void);
  * 		response_string		- oczekiwana odpowiedź, może być fragment
  * 		no_of_attempts		- ilość prób; >=1
  * 		wait_max_delay		- ile maksymalnie ms mamy czekać na odpowiedź; delay = 100ms * wait_max_delay;  >=1
-
  */
 enum AT_RESP_ENUM gsmSendAtCmdWaitResp(uint8_t const *, uint8_t const *, uint8_t, uint8_t);
 
@@ -88,11 +87,11 @@ enum RX_STATE_ENUM gsmIsRxFinished(void);
 
 /*
  */
-uint8_t gsmGprsInit(uint8_t const *);
+enum GPRS_INIT_ENUM gsmGprsInit(uint8_t const *);
 
 /*
  */
-uint8_t gsmGprsOpenSocket(uint8_t const *, uint8_t const *, uint8_t const *);
+enum GPRS_SOCKET_ENUM gsmGprsOpenSocket(uint8_t const *, uint8_t const *, uint8_t const *);
 
 /*
  */
@@ -123,9 +122,52 @@ inline void gsmRxcieEnable(void);
 
 
 
+//////////////////////////////////////////////////////////////////
+// enums
+
+
+enum AT_RESP_ENUM 
+{
+	AT_RESP_ERR_NO_RESP = -1,		// nic nie odebrano
+	AT_RESP_ERR_DIF_RESP = 0,		// odebrana odpowiedź jest inna niż oczekiwana
+	AT_RESP_OK = 1,					// odebrana odpowiedź jest taka jak oczekiwana
+	AT_RESP_LAST_ITEM
+};
+
+enum RX_STATE_ENUM 
+{
+	RX_NOT_FINISHED = 0,			// nie zakończono odbioru
+	RX_FINISHED = 1,				// zakończono odbiór, coś odebrano
+	RX_LAST_ITEM
+};
+
+enum GPRS_INIT_ENUM 
+{
+	GPRS_INIT_NOT_OK = 0,			// nie połączono
+	GPRS_INIT_OK = 1,				// połączono z siecią GPRS
+	GPRS_INIT_LAST_ITEM
+};
+
+enum GPRS_SOCKET_ENUM 
+{
+	GPRS_SOCKET_NOT_OPEN = 0,		// nie otwarty
+	GPRS_SOCKET_OPEN = 1,			// otwarty pomyślnie
+	GPRS_SOCKET_LAST_ITEM
+};
+
+
+
 
 //////////////////////////////////////////////////////////////////
 // struktury etc.
+
+
+
+struct GSM_DATA {
+	
+	uint8_t ipAddress[16+1];			// otrzymany adres IP
+	enum AT_RESP_ENUM response;			// do przechowywania wyniku z gsmSendAtCmdWaitResp
+};
 
 
 /* pole bitowe
@@ -142,20 +184,19 @@ struct GSM_FLAGS {
 };
 
 
-// definicja struktury na flagi do obsługi GPS
+// definicja struktury na dane dla GSM
+volatile struct GSM_DATA gsm;
+
+
+// definicja struktury na flagi do obsługi GSM
 volatile struct GSM_FLAGS gsmFlags;
 
 
 
 
 //////////////////////////////////////////////////////////////////
-// zmienne
+// bufory
 
-
-/* do przechowywania wyniku z gsmSendAtCmdWaitResp()
- * otrzymuje dane z 'enum AT_RESP_ENUM '
- */ 
-enum AT_RESP_ENUM gsmResponse;
 
 
 // bufor na dane odebrane z GSM
@@ -172,30 +213,7 @@ uint8_t gsmCmdBuffIdx;
 
 
 
-//////////////////////////////////////////////////////////////////
-// enums
-
-
-enum AT_RESP_ENUM 
-{
-  AT_RESP_ERR_NO_RESP = -1,		// nic nie odebrano
-  AT_RESP_ERR_DIF_RESP = 0,		// odebrana odpowiedź jest inna niż oczekiwana
-  AT_RESP_OK = 1,				// odebrana odpowiedź jest taka jak oczekiwana
-
-  AT_RESP_LAST_ITEM
-};
-
-
-enum RX_STATE_ENUM 
-{
-  RX_NOT_FINISHED = 0,			// nie zakończono odbioru
-  RX_FINISHED = 1,				// zakończono odbiór, coś odebrano
-  RX_LAST_ITEM
-};
 
 
 
-
-
-
-#endif // GSM_H_INCLUDED
+#endif // __GSM_H_INCLUDED
