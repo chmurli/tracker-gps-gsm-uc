@@ -36,7 +36,7 @@
 
 /* czas w sekundach co jaki wysyłać informację o niepoprawnym ustaleniu pozycji
  */
-#define NO_FIX_HARD_SEND_DATA	30
+#define NO_FIX_HARD_SEND_DATA	60
 
 
 

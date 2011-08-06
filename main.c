@@ -48,7 +48,7 @@
 #include "uart.h"
 #include "gps.h"
 #include "gsm.h"
-//#include "at.h"
+#include "at.h"
 
 
 
@@ -169,7 +169,7 @@ int main(void)
 					 * 		5013.2225,N,01903.7918,E,172.3,0.16,4,1.21,D\r\n
 					 */  
 					strcpy(gsmCmdBuff, (void *)gps.latitude);		// strcpy - nastąpi "wyczyszczenie" poprzednich danych
-					strcat(gsmCmdBuff, ",");				// dalej strcat
+					strcat(gsmCmdBuff, ",");						// dalej strcat
 					strcat(gsmCmdBuff, (void *)gps.latitudeInd);
 					strcat(gsmCmdBuff, ",");
 					strcat(gsmCmdBuff, (void *)gps.longitude);
@@ -185,7 +185,7 @@ int main(void)
 					strcat(gsmCmdBuff, (void *)gps.pdop);
 					strcat(gsmCmdBuff, ",");
 					strcat(gsmCmdBuff, (void *)gps.mode);
-					strcat(gsmCmdBuff, "\r\n"); 			// koniec
+					strcat(gsmCmdBuff, "\r\n"); 					// koniec
 					
 					
 					// wyślij dane
@@ -218,6 +218,9 @@ int main(void)
 					
 					// wyślij wiadomość o błędnej pozycji
 					gsmGprsSendData(INSTRUCTION_NOFIX);
+					
+					// wyślij adres IP
+					//gsmGprsSendData((void *)gsm.ipAddress);
 				
 				}
 			}

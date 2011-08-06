@@ -17,8 +17,8 @@
 #include "makra.h"
 #include "config.h"
 #include "uart.h"
-#include "at.h"
 #include "gsm.h"
+#include "at.h"
 
 
 #ifndef NULL
@@ -216,7 +216,7 @@ enum GPRS_SOCKET_ENUM gsmGprsOpenSocket(
 	 * nie możemy wieć pomylić komunikatów;
 	 * musimy to wykryć lub czekać dłuższy czas na dalsze instrukcje
 	 */
-	gsmSendAtCmdNoResp(gsmCmdBuff, 20);
+	gsmSendAtCmdNoResp(gsmCmdBuff, 25);
 
 
 	// sprawdź czy połączenie zostało otwarte pomyślnie i zwróć wartość enum
