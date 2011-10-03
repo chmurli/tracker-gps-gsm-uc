@@ -302,7 +302,7 @@ inline void gsmRxcieDisable(void)	{	UCSR0B &= ~(1<<RXCIE0); 	}
 // przerwanie do odbioru danych
 
 
-SIGNAL(USART0_RXC_vect)
+ISR(USART0_RXC_vect)
 {
 	
 	// pobieramy znak z rejestru od przerwania

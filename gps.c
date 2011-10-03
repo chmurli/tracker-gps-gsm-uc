@@ -183,12 +183,12 @@ prog_uint8_t frame_GSA[] = "GPGSA";
  * przerwanie następuje gdy zostanie odebrany jeden znak z GPS
  * w przerwaniu nastąpi od razu zdekodowanie danych i zapisanie ich do odpowiednich struktur bez buforowania danych;
  * takie rozwiązanie pozwala lepiej uśrednić czas obsługi przerwania 
- * stosuję instrukcję 'return 0' by szybciej zakończyć przerwanie jeżeli wiem że reszta operacji mnie nie obchodzi;
+ * stosuję makro 'reti()' by szybciej zakończyć przerwanie jeżeli wiem że reszta operacji mnie nie obchodzi;
  * pozwala to wcześniej zakończyć przerwanie, może to być ważne przy większych prędkościach i niższym taktowaniu uC
  * 
  * Trzeba pamiętać że dane napływają w sposób ciągły i ich obsługa powinna być jak najkrótsza
  */
-SIGNAL(USART1_RXC_vect)
+ISR(USART1_RXC_vect)
 {
 	
 	// pobieramy znak z rejestru od przerwania
@@ -217,20 +217,20 @@ SIGNAL(USART1_RXC_vect)
 	if(znak == '*'){
 		i=0;
 		gpsFlags.isChecksum=1;	// nastepne dane to suma kontrolna
-		return 0;
+		reti();
 	}
 	
 	// koniec sumy kontrolnej
 	if(znak == '\r'){
 		gpsFlags.isChecksum=0;
-		return 0;
+		reti();
 	}
 	
 	// zapisujemy sumę kontrolną
 	if(gpsFlags.isChecksum){
 		gps.checksumRcv[i++]=znak;
 		gps.checksumRcv[i]='\0';
-		return 0;
+		reti();
 	}
 	
 	
@@ -246,7 +246,7 @@ SIGNAL(USART1_RXC_vect)
 		gpsFlags.isRMC=1;
 		gpsFlags.isGSA=1;
 		gps.checksum=0;
-		return 0;
+		reti();
 	}
 
 
@@ -259,7 +259,7 @@ SIGNAL(USART1_RXC_vect)
 	if(znak == ',') {
 		++krok;
 		i=0;
-		return 0;
+		reti();
 	}
 
 	
@@ -284,7 +284,7 @@ SIGNAL(USART1_RXC_vect)
 		
 		
 		++i;
-		return 0;
+		reti();
 			
 	}
 
@@ -300,7 +300,7 @@ SIGNAL(USART1_RXC_vect)
 		// koniec ramki
 		if(znak == '\n' && gpsVerifyChecksum()) {
 			gpsFlags.rdyGGA=1;
-			return 0;
+			reti();
 		}
 		
 		
@@ -348,7 +348,7 @@ SIGNAL(USART1_RXC_vect)
 		// koniec ramki
 		if(znak == '\n' && gpsVerifyChecksum()) {
 			gpsFlags.rdyRMC=1;
-			return 0;
+			reti();
 		}
 	
 		
@@ -388,7 +388,7 @@ SIGNAL(USART1_RXC_vect)
 		// koniec ramki
 		if(znak == '\n' && gpsVerifyChecksum()) {
 			gpsFlags.rdyGSA=1;
-			return 0;
+			reti();
 		}
 	
 		
