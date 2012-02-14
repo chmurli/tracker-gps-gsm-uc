@@ -173,9 +173,9 @@ static inline uint8_t gpsVerifyChecksum(void){
 /* tablice header'ów ramek służące do rozpoznawanie ramek; 
  * zapisane w pamięci programu
  */
-prog_uint8_t frame_GGA[] = "GPGGA";
-prog_uint8_t frame_RMC[] = "GPRMC";
-prog_uint8_t frame_GSA[] = "GPGSA";
+const prog_uint8_t frame_GGA[] = "GPGGA";
+const prog_uint8_t frame_RMC[] = "GPRMC";
+const prog_uint8_t frame_GSA[] = "GPGSA";
 
 
 
